@@ -12,7 +12,8 @@ class Database:
     }
 
     def __init__(self):
-        self.conn = sqlite3.connect(self.db_name)
+        self.connection = sqlite3.connect(self.db_name)
+        self.conn = self.connection.cursor()
         print('Database connection is open')
         self.create_papita_table()
 
@@ -26,6 +27,8 @@ class Database:
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         '''
+        self.conn.execute(sql)
+        print("Table created")
 
     def validate_table_exist(self, table_name):
         return table_name in self.tables
@@ -35,7 +38,7 @@ class Database:
             columns_list = [value for key, value in self.tables[table_name].items()]
             columns = ','.join(columns_list)
             sql = f'SELECT {columns} FROM {table_name}'
-            rows = conn.execute(sql)
+            rows = self.conn.execute(sql)
             result = {
                 'error': False,
                 'rows': rows
@@ -53,7 +56,7 @@ class Database:
             columns = ','.join(columns_list)
             id_column_name = self.tables[table_name]['id']
             sql = f'SELECT {columns} FROM {table_name} WHERE {id_column_name} = id'
-            rows = conn.execute(sql)
+            rows = self.conn.execute(sql)
             result = {
                 'error': False,
                 'rows': rows
@@ -69,10 +72,10 @@ class Database:
         if self.validate_table_exist:
             columns_list = [value for key, value in self.tables[table_name].items()]
             columns = ','.join(columns_list)
-            sql = '''
-                INSERT INTO
-                f'{table_name}'
-                .
-            '''
+            sql = f'INSERT INTO {table_name} ({columns}) VALUES ({",".join(["?" for i in range(len(columns_list))])})'
+            new_row = self.conn.execute(sql, data)
+            self.connection.commit()
+            return self.conn.lastrowid
+
 
 
